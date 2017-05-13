@@ -4,7 +4,7 @@ import sys
 import logging
 from typing import Optional
 from time import sleep
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import spotipy
 import spotipy.util as util
@@ -13,27 +13,34 @@ from aw_core.models import Event
 from aw_client.client import ActivityWatchClient
 
 
+def patch_spotipy():
+    """Ugly but works until the Spotipy maintainer fixes his PR backlog"""
+    def patch_current_track(self):
+        return self._get('me/player/currently-playing')
+
+    spotipy.Spotify.current_user_playing_track = patch_current_track
+
+
 def get_current_track(sp) -> Optional[dict]:
         current_track = sp.current_user_playing_track()
         if current_track['is_playing']:
-            # print(current_track)
-            # print(current_track['item'])
-            # from pprint import pprint
-            # pprint(current_track['item'])
-            song_name = current_track['item']['name']
-            album_name = current_track['item']['album']['name']
-            artist_name = current_track['item']['artists'][0]['name']
-            logging.debug("{} - {} ({})".format(song_name, artist_name, album_name))
-            data = {
-                "title": song_name,
-                "artist": artist_name,
-                "album": album_name,
-                "id": current_track['item']['id']
-            }
-            # pprint(data)
-            return data
+            return current_track
         else:
             return None
+
+
+def data_from_track(track):
+    song_name = track['item']['name']
+    album_name = track['item']['album']['name']
+    artist_name = track['item']['artists'][0]['name']
+    logging.debug("{} - {} ({})".format(song_name, artist_name, album_name))
+    data = {
+        "title": song_name,
+        "artist": artist_name,
+        "album": album_name,
+        "id": track['item']['id']
+    }
+    return data
 
 
 def auth(username):
@@ -48,13 +55,15 @@ def auth(username):
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
+
     if len(sys.argv) > 1:
         username = sys.argv[1]
     else:
         print("Usage: {} username".format(sys.argv[0]))
         sys.exit()
 
-    logging.basicConfig(level=logging.INFO)
+    patch_spotipy()
 
     poll_interval = 5
 
@@ -65,10 +74,12 @@ def main():
 
     sp = auth(username)
     while True:
-        print("Polling...")
-        track_data = get_current_track(sp)
+        track = get_current_track(sp)
+        track_data = data_from_track(track)
+        song_td = timedelta(seconds=track['progress_ms'] / 1000)
+        song_time = int(song_td.seconds / 60), int(song_td.seconds % 60)
+        print("Current track ({}:{}): {title} - {artist} ({album})".format(*song_time, **track_data), end='\r')
         aw.heartbeat(bucketname, Event(timestamp=datetime.now(timezone.utc), data=track_data), pulsetime=poll_interval + 1)
-        print("Heartbeat sent")
         sleep(poll_interval)
     else:
         print("Can't get token for", username)
