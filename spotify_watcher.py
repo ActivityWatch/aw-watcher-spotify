@@ -38,7 +38,7 @@ def data_from_track(track):
         "title": song_name,
         "artist": artist_name,
         "album": album_name,
-        "id": track['item']['id']
+        "uri": track['item']['uri']
     }
     return data
 
@@ -52,6 +52,13 @@ def auth(username):
     else:
         print("Was unable to get token")
         sys.exit(1)
+
+
+def print_statusline(msg):
+    last_msg_length = len(print_statusline.last_msg) if hasattr(print_statusline, 'last_msg') else 0
+    print(' ' * last_msg_length, end='\r')
+    print(msg, end='\r')
+    print_statusline.last_msg = msg
 
 
 def main():
@@ -75,11 +82,21 @@ def main():
     sp = auth(username)
     while True:
         track = get_current_track(sp)
-        track_data = data_from_track(track)
-        song_td = timedelta(seconds=track['progress_ms'] / 1000)
-        song_time = int(song_td.seconds / 60), int(song_td.seconds % 60)
-        print("Current track ({}:{}): {title} - {artist} ({album})".format(*song_time, **track_data), end='\r')
-        aw.heartbeat(bucketname, Event(timestamp=datetime.now(timezone.utc), data=track_data), pulsetime=poll_interval + 1)
+        # from pprint import pprint
+        # pprint(track)
+        print_statusline("Waiting for track to start playing...")
+        if track:
+            track_data = data_from_track(track)
+            song_td = timedelta(seconds=track['progress_ms'] / 1000)
+            song_time = int(song_td.seconds / 60), int(song_td.seconds % 60)
+            print_statusline("Current track ({}:{}): {title} - {artist} ({album})".format(*song_time, **track_data))
+            try:
+                aw.heartbeat(bucketname, Event(timestamp=datetime.now(timezone.utc), data=track_data), pulsetime=poll_interval + 1)
+                pass
+            except spotipy.client.SpotifyException as e:
+                print("\nToken expired, trying to refresh\n")
+                sp = auth(username)
+
         sleep(poll_interval)
     else:
         print("Can't get token for", username)
