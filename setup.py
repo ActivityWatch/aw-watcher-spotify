@@ -11,6 +11,7 @@ setup(name='aw-watcher-spotify',
       url='https://github.com/ActivityWatch/aw-watcher-spotify',
       packages=['aw_watcher_spotify'],
       install_requires=[
+          'aw-client',
           'spotipy>=2.4.4',
       ],
       dependency_links=[
