@@ -100,7 +100,8 @@ def main():
         logger.error("username, client_id or client_secret not specified in config file ({}). Get your client_id and client_secret here: https://developer.spotify.com/my-applications/".format(config_dir))
         sys.exit(1)
 
-    aw = ActivityWatchClient('aw-watcher-spotify', testing=True)
+    # TODO: Fix --testing flag and set testing as appropriate
+    aw = ActivityWatchClient('aw-watcher-spotify', testing=False)
     bucketname = "{}_{}".format(aw.client_name, aw.client_hostname)
     aw.setup_bucket(bucketname, 'currently-playing')
     aw.connect()
