@@ -114,7 +114,7 @@ def main():
             # pprint(track)
         except spotipy.client.SpotifyException as e:
             print("\nToken expired, trying to refresh\n")
-            sp = auth(username)
+            sp = auth(username, client_id=client_id, client_secret=client_secret)
             continue
 
         print_statusline("Waiting for track to start playing...")
