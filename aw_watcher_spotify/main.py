@@ -6,6 +6,7 @@ from typing import Optional
 from time import sleep
 from datetime import datetime, timezone, timedelta
 
+from requests import ConnectionError
 import spotipy
 import spotipy.util as util
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -29,11 +30,10 @@ def patch_spotipy():
 
 
 def get_current_track(sp) -> Optional[dict]:
-        current_track = sp.current_user_playing_track()
-        if current_track['is_playing']:
-            return current_track
-        else:
-            return None
+    current_track = sp.current_user_playing_track()
+    if current_track['is_playing']:
+        return current_track
+    return None
 
 
 def data_from_track(track):
@@ -115,6 +115,10 @@ def main():
         except spotipy.client.SpotifyException as e:
             print("\nToken expired, trying to refresh\n")
             sp = auth(username, client_id=client_id, client_secret=client_secret)
+            continue
+        except ConnectionError as e:
+            logger.error("Connection error while trying to get track, check your internet connection.")
+            sleep(poll_time)
             continue
 
         print_statusline("Waiting for track to start playing...")
