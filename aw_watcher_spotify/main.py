@@ -107,6 +107,8 @@ def main():
     aw.connect()
 
     sp = auth(username, client_id=client_id, client_secret=client_secret)
+    last_track = None
+    track = None
     while True:
         try:
             track = get_current_track(sp)
@@ -121,14 +123,24 @@ def main():
             sleep(poll_time)
             continue
 
-        print_statusline("Waiting for track to start playing...")
+        # Outputs a new line when a song ends, giving a short history directly in the log
+        if last_track:
+            last_track_data = data_from_track(last_track)
+            if not track or last_track_data["uri"] != data_from_track(track)["uri"]:
+                song_td = timedelta(seconds=last_track['progress_ms'] / 1000)
+                song_time = int(song_td.seconds / 60), int(song_td.seconds % 60)
+                print_statusline("Track ended ({}:{:02d}): {title} - {artist} ({album})\n".format(*song_time, **last_track_data))
+
         if track:
             track_data = data_from_track(track)
             song_td = timedelta(seconds=track['progress_ms'] / 1000)
             song_time = int(song_td.seconds / 60), int(song_td.seconds % 60)
             print_statusline("Current track ({}:{:02d}): {title} - {artist} ({album})".format(*song_time, **track_data))
             aw.heartbeat(bucketname, Event(timestamp=datetime.now(timezone.utc), data=track_data), pulsetime=poll_time + 1)
+        else:
+            print_statusline("Waiting for track to start playing...")
 
+        last_track = track
         sleep(poll_time)
 
 
