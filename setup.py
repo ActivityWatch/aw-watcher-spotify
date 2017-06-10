@@ -16,6 +16,7 @@ setup(name='aw-watcher-spotify',
       ],
       dependency_links=[
           'https://github.com/ActivityWatch/aw-client/tarball/master#egg=aw-client-0.2.0',
+          'https://github.com/ActivityWatch/aw-core/tarball/master#egg=aw-core-0.2.0',
       ],
       entry_points={
           'console_scripts': ['aw-watcher-spotify = aw_watcher_spotify:main']
