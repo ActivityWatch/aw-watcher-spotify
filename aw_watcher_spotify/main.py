@@ -140,8 +140,11 @@ def main():
             track_data = data_from_track(track)
             song_td = timedelta(seconds=track['progress_ms'] / 1000)
             song_time = int(song_td.seconds / 60), int(song_td.seconds % 60)
+
             print_statusline("Current track ({}:{:02d}): {title} - {artist} ({album})".format(*song_time, **track_data))
-            aw.heartbeat(bucketname, Event(timestamp=datetime.now(timezone.utc), data=track_data), pulsetime=poll_time + 1)
+
+            event = Event(timestamp=datetime.now(timezone.utc), data=track_data)
+            aw.heartbeat(bucketname, event, pulsetime=poll_time + 1, queued=True)
         else:
             print_statusline("Waiting for track to start playing...")
 
