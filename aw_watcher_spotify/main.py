@@ -5,6 +5,7 @@ import logging
 from typing import Optional
 from time import sleep
 from datetime import datetime, timezone, timedelta
+import json
 
 from requests import ConnectionError
 import spotipy
@@ -115,12 +116,16 @@ def main():
             # from pprint import pprint
             # pprint(track)
         except spotipy.client.SpotifyException as e:
-            print("\nToken expired, trying to refresh\n")
+            print_statusline("\nToken expired, trying to refresh\n")
             sp = auth(username, client_id=client_id, client_secret=client_secret)
             continue
         except ConnectionError as e:
             logger.error("Connection error while trying to get track, check your internet connection.")
             sleep(poll_time)
+            continue
+        except json.JSONDecodeError as e:
+            logger.error("Error trying to decode")
+            sleep(0.1)
             continue
 
         # Outputs a new line when a song ends, giving a short history directly in the log
