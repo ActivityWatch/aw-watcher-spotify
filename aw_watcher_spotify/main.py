@@ -5,6 +5,7 @@ import logging
 from typing import Optional
 from time import sleep
 from datetime import datetime, timezone, timedelta
+import json
 
 from requests import ConnectionError
 import spotipy
@@ -115,12 +116,16 @@ def main():
             # from pprint import pprint
             # pprint(track)
         except spotipy.client.SpotifyException as e:
-            print("\nToken expired, trying to refresh\n")
+            print_statusline("\nToken expired, trying to refresh\n")
             sp = auth(username, client_id=client_id, client_secret=client_secret)
             continue
         except ConnectionError as e:
             logger.error("Connection error while trying to get track, check your internet connection.")
             sleep(poll_time)
+            continue
+        except json.JSONDecodeError as e:
+            logger.error("Error trying to decode")
+            sleep(0.1)
             continue
 
         # Outputs a new line when a song ends, giving a short history directly in the log
@@ -135,8 +140,11 @@ def main():
             track_data = data_from_track(track)
             song_td = timedelta(seconds=track['progress_ms'] / 1000)
             song_time = int(song_td.seconds / 60), int(song_td.seconds % 60)
+
             print_statusline("Current track ({}:{:02d}): {title} - {artist} ({album})".format(*song_time, **track_data))
-            aw.heartbeat(bucketname, Event(timestamp=datetime.now(timezone.utc), data=track_data), pulsetime=poll_time + 1)
+
+            event = Event(timestamp=datetime.now(timezone.utc), data=track_data)
+            aw.heartbeat(bucketname, event, pulsetime=poll_time + 1, queued=True)
         else:
             print_statusline("Waiting for track to start playing...")
 
