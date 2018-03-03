@@ -32,7 +32,7 @@ def patch_spotipy():
 
 def get_current_track(sp) -> Optional[dict]:
     current_track = sp.current_user_playing_track()
-    if current_track['is_playing']:
+    if current_track and current_track['is_playing']:
         return current_track
     return None
 
