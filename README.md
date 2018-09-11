@@ -20,7 +20,7 @@ First run (generates empty config that you need to fill out):
 python3 -m aw_watcher_spotify
 ```
 
-If this is the first time you run it on your machine, it will give you an error, this is normal. Just fill in the config file referenced in the error. You can create the client credentials needed at the [Spotify Developer portal](https://beta.developer.spotify.com/).
+If this is the first time you run it on your machine, it will give you an error, this is normal. Just fill in the config file referenced in the error. You can create the client credentials needed at the [Spotify Developer portal](https://beta.developer.spotify.com/). In the dashboard, go to your app settings and add `http://localhost/` in the Redirect URIs section.
 
 Now run it again:
 
