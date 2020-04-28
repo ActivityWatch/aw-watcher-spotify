@@ -2,18 +2,14 @@ language: python
 matrix:
   include:
    - os: linux
-     python: 3.5
-   - os: linux
      python: 3.6
-   - os: linux
-     python: nightly
 
 
 before_install:
- - "true"  # Maybe install something here later on for testing etc.
+ - "pip install poetry"  # Maybe install something here later on for testing etc.
 
 install:
- - "make install"
+ - "poetry install"
 
 script:
  - "make test"
