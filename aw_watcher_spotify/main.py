@@ -20,18 +20,6 @@ from aw_client.client import ActivityWatchClient
 logger = logging.getLogger("aw-watcher-spotify")
 
 
-def patch_spotipy():
-    """Ugly but works until the Spotipy maintainer fixes his PR backlog"""
-
-    def patch_current_track(self):
-        return self._get("me/player/currently-playing")
-
-    spotipy.Spotify.current_user_playing_track = patch_current_track
-
-    # Ugly hack to disable automatic opening of webbrowser to get token
-    # del spotipy.util.prompt_for_user_token.__globals__["webbrowser"]
-
-
 def get_current_track(sp) -> Optional[dict]:
     current_track = sp.current_user_playing_track()
     if current_track and current_track["is_playing"]:
@@ -102,8 +90,6 @@ def print_statusline(msg):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-
-    patch_spotipy()
 
     config_dir = dirs.get_config_dir("aw-watcher-spotify")
 
