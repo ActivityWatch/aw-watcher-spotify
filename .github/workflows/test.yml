@@ -1,0 +1,29 @@
+name: Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Install dependencies
+      run: |
+        pip install poetry
+        poetry install
+    - name: Check that it's correctly installed
+      run: |
+        poetry run which aw-watcher-spotify
+        poetry run python3 -c 'import aw_watcher_spotify'
+    - name: Typecheck with mypy
+      run: |
+        poetry run mypy --ignore-missing-imports aw_watcher_spotify
