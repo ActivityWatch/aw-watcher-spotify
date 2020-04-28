@@ -2,6 +2,7 @@
 
 import sys
 import logging
+import traceback
 from typing import Optional
 from time import sleep
 from datetime import datetime, timezone, timedelta
@@ -33,12 +34,12 @@ def patch_spotipy():
 
 def get_current_track(sp) -> Optional[dict]:
     current_track = sp.current_user_playing_track()
-    if current_track["is_playing"]:
+    if current_track and current_track["is_playing"]:
         return current_track
     return None
 
 
-def data_from_track(track):
+def data_from_track(track: dict) -> dict:
     song_name = track["item"]["name"]
     album_name = track["item"]["album"]["name"]
     artist_name = track["item"]["artists"][0]["name"]
@@ -148,35 +149,41 @@ def main():
             sleep(0.1)
             continue
 
-        # Outputs a new line when a song ends, giving a short history directly in the log
-        if last_track:
-            last_track_data = data_from_track(last_track)
-            if not track or last_track_data["uri"] != data_from_track(track)["uri"]:
-                song_td = timedelta(seconds=last_track["progress_ms"] / 1000)
+        try:
+            # Outputs a new line when a song ends, giving a short history directly in the log
+            if last_track:
+                last_track_data = data_from_track(last_track)
+                if not track or (
+                    track and last_track_data["uri"] != data_from_track(track)["uri"]
+                ):
+                    song_td = timedelta(seconds=last_track["progress_ms"] / 1000)
+                    song_time = int(song_td.seconds / 60), int(song_td.seconds % 60)
+                    print_statusline(
+                        "Track ended ({}:{:02d}): {title} - {artist} ({album})\n".format(
+                            *song_time, **last_track_data
+                        )
+                    )
+
+            if track:
+                track_data = data_from_track(track)
+                song_td = timedelta(seconds=track["progress_ms"] / 1000)
                 song_time = int(song_td.seconds / 60), int(song_td.seconds % 60)
+
                 print_statusline(
-                    "Track ended ({}:{:02d}): {title} - {artist} ({album})\n".format(
-                        *song_time, **last_track_data
+                    "Current track ({}:{:02d}): {title} - {artist} ({album})".format(
+                        *song_time, **track_data
                     )
                 )
 
-        if track:
-            track_data = data_from_track(track)
-            song_td = timedelta(seconds=track["progress_ms"] / 1000)
-            song_time = int(song_td.seconds / 60), int(song_td.seconds % 60)
+                event = Event(timestamp=datetime.now(timezone.utc), data=track_data)
+                aw.heartbeat(bucketname, event, pulsetime=poll_time + 1, queued=True)
+            else:
+                print_statusline("Waiting for track to start playing...")
 
-            print_statusline(
-                "Current track ({}:{:02d}): {title} - {artist} ({album})".format(
-                    *song_time, **track_data
-                )
-            )
-
-            event = Event(timestamp=datetime.now(timezone.utc), data=track_data)
-            aw.heartbeat(bucketname, event, pulsetime=poll_time + 1, queued=True)
-        else:
-            print_statusline("Waiting for track to start playing...")
-
-        last_track = track
+            last_track = track
+        except Exception as e:
+            print("An exception occurred: {}".format(e))
+            traceback.print_exc()
         sleep(poll_time)
 
 
