@@ -104,7 +104,7 @@ def main():
     # TODO: Fix --testing flag and set testing as appropriate
     aw = ActivityWatchClient('aw-watcher-spotify', testing=False)
     bucketname = "{}_{}".format(aw.client_name, aw.client_hostname)
-    aw.setup_bucket(bucketname, 'currently-playing')
+    aw.create_bucket(bucketname, "currently-playing", queued=True)
     aw.connect()
 
     sp = auth(username, client_id=client_id, client_secret=client_secret)
