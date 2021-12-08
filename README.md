@@ -7,7 +7,11 @@ This watcher is currently in a early stage of development, please submit PRs if 
 
 
 ## Usage
+### Step 0: Create Spotify Web API token
+Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/applications) and create a new application.
 
+In the app settings, add `http://localhost:8088` in the Redirect URIs section.
+### Step 1: Using poetry
 Requirements: Requires that you have poetry installed.
 
 First install the package and its dependencies:
@@ -21,15 +25,21 @@ First run (generates empty config that you need to fill out):
 ```sh
 poetry run aw-watcher-spotify
 ```
-
-If this is the first time you run it on your machine, it will give you an error, this is normal. Just fill in the config file referenced in the error. You can create the client credentials needed at the [Spotify Developer portal](https://beta.developer.spotify.com/). In the dashboard, go to your app settings and add `http://localhost/` in the Redirect URIs section.
-
-Now run it again:
+### Step 1: Using pip
+Install the requirements:
 
 ```sh
-poetry run aw-watcher-spotify
+pip install -r requirements.txt
 ```
 
-It will ask you to go to a URL (or try to open it for you), you need to paste the URL you're redirected to (something of the format `http://localhost/?code=...`) into the terminal.
+First run (generates empty config that you need to fill out):
+```sh
+python aw-watcher-spotify/main.py
+```
 
+### Step 2: Enter credentials
+If this is the first time you run it on your machine, it will give you an error, this is normal.
+Just fill in the config file (the directory is referenced in the error).
+
+Run the script again and...
 You're done! Try playing a song on Spotify on any of your devices and it should start logging (provided they are not in offline mode).
