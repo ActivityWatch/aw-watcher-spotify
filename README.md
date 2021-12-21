@@ -11,7 +11,7 @@ This watcher is currently in a early stage of development, please submit PRs if 
 Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/applications) and create a new application.
 
 In the app settings, add `http://localhost:8088` in the Redirect URIs section.
-### Step 1: Using poetry
+### Step 1: Install package (using poetry)
 Requirements: Requires that you have poetry installed.
 
 First install the package and its dependencies:
@@ -25,7 +25,7 @@ First run (generates empty config that you need to fill out):
 ```sh
 poetry run aw-watcher-spotify
 ```
-### Step 1: Using pip
+### Step 1: Install package (without poetry, using only pip)
 Install the requirements:
 
 ```sh
