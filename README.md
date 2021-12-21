@@ -29,7 +29,7 @@ poetry run aw-watcher-spotify
 Install the requirements:
 
 ```sh
-pip install -r requirements.txt
+pip install .
 ```
 
 First run (generates empty config that you need to fill out):

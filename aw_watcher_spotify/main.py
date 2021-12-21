@@ -18,7 +18,12 @@ from aw_core.models import Event
 from aw_client.client import ActivityWatchClient
 
 logger = logging.getLogger("aw-watcher-spotify")
-
+DEFAULT_CONFIG = """
+[aw-watcher-spotify]
+username = ""
+client_id = ""
+client_secret = ""
+poll_time = 5.0"""
 
 def get_current_track(sp) -> Optional[dict]:
     current_track = sp.currently_playing(additional_types=["episode"])
@@ -75,16 +80,7 @@ def auth(username, client_id=None, client_secret=None):
 
 def load_config():
     from aw_core.config import load_config_toml as _load_config
-
-    default_config = """
-        [aw-watcher-spotify]
-        username = ""
-        client_id = ""
-        client_secret = ""
-        poll_time = 5.0
-    """.strip()
-
-    return _load_config("aw-watcher-spotify", default_config)
+    return _load_config("aw-watcher-spotify", DEFAULT_CONFIG)
 
 
 def print_statusline(msg):
@@ -140,6 +136,11 @@ def main():
             continue
         except json.JSONDecodeError as e:
             logger.error("Error trying to decode")
+            sleep(0.1)
+            continue
+        except Exception as e:
+            logger.error("Unknown Error")
+            logger.error(traceback.format_exc())
             sleep(0.1)
             continue
 

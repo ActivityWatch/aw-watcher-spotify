@@ -1,4 +1,0 @@
-requests
-spotipy
-aw_core
-aw_client
