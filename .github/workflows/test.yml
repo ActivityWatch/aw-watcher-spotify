@@ -26,4 +26,5 @@ jobs:
         poetry run python3 -c 'import aw_watcher_spotify'
     - name: Typecheck with mypy
       run: |
+        poetry run mypy --install-types
         poetry run mypy --ignore-missing-imports aw_watcher_spotify
