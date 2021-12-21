@@ -25,6 +25,7 @@ client_id = ""
 client_secret = ""
 poll_time = 5.0"""
 
+
 def get_current_track(sp) -> Optional[dict]:
     current_track = sp.currently_playing(additional_types=["episode"])
     if current_track and current_track["is_playing"]:
@@ -80,6 +81,7 @@ def auth(username, client_id=None, client_secret=None):
 
 def load_config():
     from aw_core.config import load_config_toml as _load_config
+
     return _load_config("aw-watcher-spotify", DEFAULT_CONFIG)
 
 
@@ -149,7 +151,8 @@ def main():
             if last_track:
                 last_track_data = data_from_track(last_track, sp)
                 if not track or (
-                    track and last_track_data["uri"] != data_from_track(track, sp)["uri"]
+                    track
+                    and last_track_data["uri"] != data_from_track(track, sp)["uri"]
                 ):
                     song_td = timedelta(seconds=last_track["progress_ms"] / 1000)
                     song_time = int(song_td.seconds / 60), int(song_td.seconds % 60)
