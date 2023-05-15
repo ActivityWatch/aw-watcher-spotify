@@ -39,7 +39,7 @@ pip install .
 
 First run (generates empty config that you need to fill out):
 ```sh
-python aw-watcher-spotify/main.py
+python aw_watcher_spotify/main.py
 ```
 
 ### Step 2: Enter credentials
