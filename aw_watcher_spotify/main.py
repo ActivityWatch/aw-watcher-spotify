@@ -9,10 +9,9 @@ from datetime import datetime, timezone, timedelta
 import json
 
 from requests import ConnectionError
-import spotipy
-import spotipy.util as util
-from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.exceptions import SpotifyException
+from spotipy import Spotify
+from spotipy.oauth2 import SpotifyOAuth, SpotifyOauthError
 
 from aw_core import dirs
 from aw_core.models import Event
@@ -59,27 +58,18 @@ def data_from_track(track: dict, sp) -> dict:
     return data
 
 
-def auth(username, client_id=None, client_secret=None):
+def auth(username: str, client_id: str, client_secret: str) -> Spotify:
     scope = "user-read-currently-playing"
-    # spotipy.oauth2.SpotifyOAuth(client_id, client_secret, )
-    # specify port
-    token = util.prompt_for_user_token(
-        username,
-        scope=scope,
-        client_id=client_id,
-        client_secret=client_secret,
-        redirect_uri="http://127.0.0.1:8088",
-    )
-
-    if token:
-        credential_manager = SpotifyClientCredentials(
-            client_id=client_id, client_secret=client_secret
+    try:
+        auth_manager = SpotifyOAuth(
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uri="127.0.0.1:8088",
+            scope=scope,
+            cache_path=f".cache-{username}"
         )
-        return spotipy.Spotify(
-            auth=token, client_credentials_manager=credential_manager
-        )
-    else:
-        logger.error("Was unable to get token")
+        return Spotify(auth_manager=auth_manager)
+    except SpotifyOauthError as e:
         sys.exit(1)
 
 
@@ -130,7 +120,7 @@ def main():
             track = get_current_track(sp)
             # from pprint import pprint
             # pprint(track)
-        except spotipy.client.SpotifyException as e:
+        except SpotifyException as e:
             print_statusline("\nToken expired, trying to refresh\n")
             sp = auth(username, client_id=client_id, client_secret=client_secret)
             continue
