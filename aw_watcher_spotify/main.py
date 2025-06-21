@@ -66,7 +66,7 @@ def auth(username: str, client_id: str, client_secret: str) -> Spotify:
         auth_manager = SpotifyOAuth(
             client_id=client_id,
             client_secret=client_secret,
-            redirect_uri="127.0.0.1:8088",
+            redirect_uri="http://127.0.0.1:8088",
             scope=scope,
             cache_path=f".cache-{username}"
         )
