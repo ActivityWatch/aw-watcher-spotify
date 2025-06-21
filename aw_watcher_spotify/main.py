@@ -7,6 +7,7 @@ from typing import Optional
 from time import sleep
 from datetime import datetime, timezone, timedelta
 import json
+import argparse
 
 from requests import ConnectionError
 from spotipy.exceptions import SpotifyException
@@ -16,8 +17,9 @@ from spotipy.oauth2 import SpotifyOAuth, SpotifyOauthError
 from aw_core import dirs
 from aw_core.models import Event
 from aw_client.client import ActivityWatchClient
+from aw_core.log import setup_logging
 
-logger = logging.getLogger("aw-watcher-spotify")
+
 DEFAULT_CONFIG = """
 [aw-watcher-spotify]
 username = ""
@@ -88,8 +90,14 @@ def print_statusline(msg):
     print_statusline.last_msg = msg
 
 
-def main():
-    logging.basicConfig(level=logging.INFO)
+def main(args):
+    setup_logging(
+    name="aw-watcher-spotify",
+    testing=args.testing,
+    verbose=args.verbose,
+    log_stderr=True,
+    log_file=True,
+    )
 
     config_dir = dirs.get_config_dir("aw-watcher-spotify")
 
@@ -99,7 +107,7 @@ def main():
     client_id = config["aw-watcher-spotify"].get("client_id", None)
     client_secret = config["aw-watcher-spotify"].get("client_secret", None)
     if not username or not client_id or not client_secret:
-        logger.warning(
+        logging.warning(
             "username, client_id or client_secret not specified in config file (in folder {}). Get your client_id and client_secret here: https://developer.spotify.com/my-applications/".format(
                 config_dir
             )
@@ -125,18 +133,18 @@ def main():
             sp = auth(username, client_id=client_id, client_secret=client_secret)
             continue
         except ConnectionError as e:
-            logger.error(
+            logging.error(
                 "Connection error while trying to get track, check your internet connection."
             )
             sleep(poll_time)
             continue
         except json.JSONDecodeError as e:
-            logger.error("Error trying to decode")
+            logging.error("Error trying to decode")
             sleep(0.1)
             continue
         except Exception as e:
-            logger.error("Unknown Error")
-            logger.error(traceback.format_exc())
+            logging.error("Unknown Error")
+            logging.error(traceback.format_exc())
             sleep(0.1)
             continue
 
@@ -180,4 +188,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--testing", action="store_true")
+    argparser.add_argument("--verbose", action="store_true")
+    args = argparser.parse_args()
+    main(args)
