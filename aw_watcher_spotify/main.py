@@ -90,7 +90,11 @@ def print_statusline(msg):
     print_statusline.last_msg = msg
 
 
-def main(args):
+def main():
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--testing", action="store_true")
+    argparser.add_argument("--verbose", action="store_true")
+    args = argparser.parse_args()
     setup_logging(
     name="aw-watcher-spotify",
     testing=args.testing,
@@ -98,7 +102,6 @@ def main(args):
     log_stderr=True,
     log_file=True,
     )
-
     config_dir = dirs.get_config_dir("aw-watcher-spotify")
 
     config = load_config()
@@ -188,8 +191,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument("--testing", action="store_true")
-    argparser.add_argument("--verbose", action="store_true")
-    args = argparser.parse_args()
-    main(args)
+    main()
