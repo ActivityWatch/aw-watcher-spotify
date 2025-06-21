@@ -12,7 +12,7 @@ This watcher is currently in a early stage of development, please submit PRs if 
 
 Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/applications) and create a new application.
 
-In the app settings, add `http://localhost:8088` in the Redirect URIs section.
+In the app settings, add `http://127.0.0.1:8088` in the Redirect URIs section.
 
 ### Step 1: Install package (using poetry)
 

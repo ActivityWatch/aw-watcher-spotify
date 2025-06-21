@@ -12,6 +12,7 @@ from requests import ConnectionError
 import spotipy
 import spotipy.util as util
 from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.exceptions import SpotifyException
 
 from aw_core import dirs
 from aw_core.models import Event
@@ -35,10 +36,10 @@ def get_current_track(sp) -> Optional[dict]:
 
 def data_from_track(track: dict, sp) -> dict:
     song_name = track["item"]["name"]
-    # local files do not have IDs
-    data = (
-        (sp.audio_features(track["item"]["id"])[0] or {}) if track["item"]["id"] else {}
-    )
+    try:
+        data = sp.audio_features(track["item"]["id"])[0] or {}
+    except SpotifyException:
+        data = {}
     data["title"] = song_name
     data["uri"] = track["item"]["uri"]
 
@@ -67,7 +68,7 @@ def auth(username, client_id=None, client_secret=None):
         scope=scope,
         client_id=client_id,
         client_secret=client_secret,
-        redirect_uri="http://localhost:8088",
+        redirect_uri="http://127.0.0.1:8088",
     )
 
     if token:
