@@ -37,7 +37,7 @@ def data_from_track(track: dict, sp) -> dict:
     song_name = track["item"]["name"]
     # local files do not have IDs
     data = (
-        (sp.audio_features(track["item"]["id"])[0] or {}) if track["item"]["id"] else {}
+        () if track["item"]["id"] else{}
     )
     data["title"] = song_name
     data["uri"] = track["item"]["uri"]
