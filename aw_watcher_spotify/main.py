@@ -37,10 +37,7 @@ def get_current_track(sp) -> Optional[dict]:
 
 def data_from_track(track: dict, sp) -> dict:
     song_name = track["item"]["name"]
-    try:
-        data = sp.audio_features(track["item"]["id"])[0] or {}
-    except SpotifyException:
-        data = {}
+    data = {}
     data["title"] = song_name
     data["uri"] = track["item"]["uri"]
 
