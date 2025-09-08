@@ -16,7 +16,7 @@ aw-client = "^0.5.7"
 
 [tool.poetry.dev-dependencies]
 black = "*"
-mypy = "^0.910"
+mypy = "*"
 
 [build-system]
 requires = ["poetry>=0.12"]
