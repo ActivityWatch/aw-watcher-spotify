@@ -7,17 +7,19 @@ from typing import Optional
 from time import sleep
 from datetime import datetime, timezone, timedelta
 import json
+import argparse
 
 from requests import ConnectionError
-import spotipy
-import spotipy.util as util
-from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.exceptions import SpotifyException
+from spotipy import Spotify
+from spotipy.oauth2 import SpotifyOAuth, SpotifyOauthError
 
 from aw_core import dirs
 from aw_core.models import Event
 from aw_client.client import ActivityWatchClient
+from aw_core.log import setup_logging
 
-logger = logging.getLogger("aw-watcher-spotify")
+
 DEFAULT_CONFIG = """
 [aw-watcher-spotify]
 username = ""
@@ -35,10 +37,10 @@ def get_current_track(sp) -> Optional[dict]:
 
 def data_from_track(track: dict, sp) -> dict:
     song_name = track["item"]["name"]
-    # local files do not have IDs
-    data = (
-        (sp.audio_features(track["item"]["id"])[0] or {}) if track["item"]["id"] else {}
-    )
+    try:
+        data = sp.audio_features(track["item"]["id"])[0] or {}
+    except SpotifyException:
+        data = {}
     data["title"] = song_name
     data["uri"] = track["item"]["uri"]
 
@@ -58,27 +60,18 @@ def data_from_track(track: dict, sp) -> dict:
     return data
 
 
-def auth(username, client_id=None, client_secret=None):
+def auth(username: str, client_id: str, client_secret: str) -> Spotify:
     scope = "user-read-currently-playing"
-    # spotipy.oauth2.SpotifyOAuth(client_id, client_secret, )
-    # specify port
-    token = util.prompt_for_user_token(
-        username,
-        scope=scope,
-        client_id=client_id,
-        client_secret=client_secret,
-        redirect_uri="http://127.0.0.1:8088",
-    )
-
-    if token:
-        credential_manager = SpotifyClientCredentials(
-            client_id=client_id, client_secret=client_secret
+    try:
+        auth_manager = SpotifyOAuth(
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uri="http://127.0.0.1:8088",
+            scope=scope,
+            cache_path=f".cache-{username}"
         )
-        return spotipy.Spotify(
-            auth=token, client_credentials_manager=credential_manager
-        )
-    else:
-        logger.error("Was unable to get token")
+        return Spotify(auth_manager=auth_manager)
+    except SpotifyOauthError as e:
         sys.exit(1)
 
 
@@ -98,8 +91,17 @@ def print_statusline(msg):
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
-
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--testing", action="store_true")
+    argparser.add_argument("--verbose", action="store_true")
+    args = argparser.parse_args()
+    setup_logging(
+    name="aw-watcher-spotify",
+    testing=args.testing,
+    verbose=args.verbose,
+    log_stderr=True,
+    log_file=True,
+    )
     config_dir = dirs.get_config_dir("aw-watcher-spotify")
 
     config = load_config()
@@ -108,7 +110,7 @@ def main():
     client_id = config["aw-watcher-spotify"].get("client_id", None)
     client_secret = config["aw-watcher-spotify"].get("client_secret", None)
     if not username or not client_id or not client_secret:
-        logger.warning(
+        logging.warning(
             "username, client_id or client_secret not specified in config file (in folder {}). Get your client_id and client_secret here: https://developer.spotify.com/my-applications/".format(
                 config_dir
             )
@@ -129,23 +131,23 @@ def main():
             track = get_current_track(sp)
             # from pprint import pprint
             # pprint(track)
-        except spotipy.client.SpotifyException as e:
+        except SpotifyException as e:
             print_statusline("\nToken expired, trying to refresh\n")
             sp = auth(username, client_id=client_id, client_secret=client_secret)
             continue
         except ConnectionError as e:
-            logger.error(
+            logging.error(
                 "Connection error while trying to get track, check your internet connection."
             )
             sleep(poll_time)
             continue
         except json.JSONDecodeError as e:
-            logger.error("Error trying to decode")
+            logging.error("Error trying to decode")
             sleep(0.1)
             continue
         except Exception as e:
-            logger.error("Unknown Error")
-            logger.error(traceback.format_exc())
+            logging.error("Unknown Error")
+            logging.error(traceback.format_exc())
             sleep(0.1)
             continue
 
