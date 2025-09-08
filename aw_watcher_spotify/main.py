@@ -67,7 +67,7 @@ def auth(username, client_id=None, client_secret=None):
         scope=scope,
         client_id=client_id,
         client_secret=client_secret,
-        redirect_uri="http://localhost:8088",
+        redirect_uri="http://127.0.0.1:8088",
     )
 
     if token:
