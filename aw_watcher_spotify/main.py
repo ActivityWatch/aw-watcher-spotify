@@ -65,7 +65,7 @@ def auth(username: str, client_id: str, client_secret: str) -> Spotify:
             client_secret=client_secret,
             redirect_uri="http://127.0.0.1:8088",
             scope=scope,
-            cache_path=f".cache-{username}"
+            cache_path=f".cache-{username}",
         )
         return Spotify(auth_manager=auth_manager)
     except SpotifyOauthError as e:
@@ -93,11 +93,11 @@ def main():
     argparser.add_argument("--verbose", action="store_true")
     args = argparser.parse_args()
     setup_logging(
-    name="aw-watcher-spotify",
-    testing=args.testing,
-    verbose=args.verbose,
-    log_stderr=True,
-    log_file=True,
+        name="aw-watcher-spotify",
+        testing=args.testing,
+        verbose=args.verbose,
+        log_stderr=True,
+        log_file=True,
     )
     config_dir = dirs.get_config_dir("aw-watcher-spotify")
 
