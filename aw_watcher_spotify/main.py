@@ -114,8 +114,7 @@ def main():
         )
         sys.exit(1)
 
-    # TODO: Fix --testing flag and set testing as appropriate
-    aw = ActivityWatchClient("aw-watcher-spotify", testing=False)
+    aw = ActivityWatchClient("aw-watcher-spotify", testing=args.testing)
     bucketname = "{}_{}".format(aw.client_name, aw.client_hostname)
     aw.create_bucket(bucketname, "currently-playing", queued=True)
     aw.connect()
