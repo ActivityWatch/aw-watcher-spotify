@@ -44,7 +44,7 @@ def data_from_track(track: dict, sp) -> dict:
     if track["item"]["type"] == "track":
         artist_name = track["item"]["artists"][0]["name"]
         album_name = track["item"]["album"]["name"]
-        data["popularity"] = track["item"]["popularity"] or -1
+        data["popularity"] = track["item"].get("popularity") or -1
         data["album"] = album_name
         data["artist"] = artist_name
         logging.debug("TRACK: {} - {} ({})".format(song_name, artist_name, album_name))
