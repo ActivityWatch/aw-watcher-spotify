@@ -1,8 +1,8 @@
 import sys
 import os
 
-path = os.path.dirname(sys.modules[__name__].__file__)
-path = os.path.join(path, "..")
+path = os.path.dirname(sys.modules[__name__].__file__ or "")
+path = os.path.join(path or "", "..")
 sys.path.insert(0, path)
 
 import aw_watcher_spotify
