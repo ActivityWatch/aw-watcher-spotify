@@ -45,7 +45,13 @@ python aw-watcher-spotify/main.py
 ### Step 2: Enter credentials
 
 If this is the first time you run it on your machine, it will give you an error, this is normal.
-Just fill in the config file (the directory is referenced in the error).
+Just fill in the config file (the directory is referenced in the error, usually `/Library/Application\ Support/activitywatch/aw-watcher-spotify/aw-watcher-spotify.toml` — don't forget to escape the slashes!), like so:
+
+```toml
+[aw-watcher-spotify]
+client_id = "your_client_id_here"
+client_secret = "your_client_secret_here"
+```
 
 Run the script again and...
 You're done! Try playing a song on Spotify on any of your devices and it should start logging (provided they are not in offline mode).
