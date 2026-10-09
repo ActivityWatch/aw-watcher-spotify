@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 
-import sys
-import logging
-import traceback
-from typing import Optional
-from time import sleep
-from datetime import datetime, timezone, timedelta
-import json
 import argparse
+import json
+import logging
+import os
+import sys
+import traceback
+from datetime import datetime, timedelta, timezone
+from time import monotonic, sleep
+from typing import Optional, Tuple
 
-from requests import ConnectionError
+from requests import RequestException
 from spotipy.exceptions import SpotifyException
 from spotipy import Spotify
-from spotipy.oauth2 import SpotifyOAuth, SpotifyOauthError
+from spotipy.oauth2 import CacheFileHandler, SpotifyOAuth, SpotifyOauthError
 
 from aw_core import dirs
 from aw_core.models import Event
@@ -26,6 +27,10 @@ username = ""
 client_id = ""
 client_secret = ""
 poll_time = 5.0"""
+
+SPOTIFY_SCOPE = "user-read-currently-playing user-read-playback-state"
+MAX_RETRY_SECONDS = 300.0
+STALE_WARNING_SECONDS = 15 * 60
 
 
 def get_current_track(sp) -> Optional[dict]:
@@ -58,18 +63,56 @@ def data_from_track(track: dict, sp) -> dict:
 
 
 def auth(username: str, client_id: str, client_secret: str) -> Spotify:
-    scope = "user-read-currently-playing"
+    cache_path = os.path.join(
+        dirs.get_cache_dir("aw-watcher-spotify"), "spotify-token-cache"
+    )
+    cache_handler = CacheFileHandler(cache_path=cache_path)
+    auth_manager = SpotifyOAuth(
+        client_id=client_id,
+        client_secret=client_secret,
+        redirect_uri="http://127.0.0.1:8088",
+        scope=SPOTIFY_SCOPE,
+        cache_handler=cache_handler,
+    )
+    return Spotify(auth_manager=auth_manager)
+
+
+def retry_delay(failure_count: int, poll_time: float) -> float:
+    base_delay = max(poll_time, 1.0)
+    exponent = min(max(failure_count - 1, 0), 10)
+    return min(base_delay * 2**exponent, MAX_RETRY_SECONDS)
+
+
+def refresh_access_token(sp: Spotify) -> bool:
+    token_info = sp.auth_manager.get_cached_token()
+    refresh_token = token_info.get("refresh_token") if token_info else None
+    if not refresh_token:
+        return False
+    sp.auth_manager.refresh_access_token(refresh_token)
+    return True
+
+
+def poll_current_track(
+    sp: Spotify, username: str, client_id: str, client_secret: str
+) -> Tuple[Spotify, Optional[dict]]:
     try:
-        auth_manager = SpotifyOAuth(
-            client_id=client_id,
-            client_secret=client_secret,
-            redirect_uri="http://127.0.0.1:8088",
-            scope=scope,
-            cache_path=f".cache-{username}",
-        )
-        return Spotify(auth_manager=auth_manager)
-    except SpotifyOauthError as e:
-        sys.exit(1)
+        return sp, get_current_track(sp)
+    except SpotifyException as error:
+        if error.http_status != 401:
+            raise
+
+        logging.warning("Spotify access token was rejected; refreshing it")
+        try:
+            refreshed = refresh_access_token(sp)
+        except (SpotifyOauthError, RequestException):
+            logging.warning(
+                "Spotify token refresh failed; reauthenticating", exc_info=True
+            )
+            refreshed = False
+
+        if not refreshed:
+            sp = auth(username, client_id, client_secret)
+        return sp, get_current_track(sp)
 
 
 def load_config():
@@ -119,33 +162,59 @@ def main():
     aw.create_bucket(bucketname, "currently-playing", queued=True)
     aw.connect()
 
-    sp = auth(username, client_id=client_id, client_secret=client_secret)
+    try:
+        sp = auth(username, client_id=client_id, client_secret=client_secret)
+    except SpotifyOauthError:
+        logging.exception("Spotify authentication failed")
+        sys.exit(1)
+
     last_track = None
     track = None
+    failure_count = 0
+    last_successful_poll = monotonic()
+    stale_warning_logged = False
     while True:
         try:
-            track = get_current_track(sp)
+            sp, track = poll_current_track(sp, username, client_id, client_secret)
             # from pprint import pprint
             # pprint(track)
-        except SpotifyException as e:
-            print_statusline("\nToken expired, trying to refresh\n")
-            sp = auth(username, client_id=client_id, client_secret=client_secret)
-            continue
-        except ConnectionError as e:
-            logging.error(
-                "Connection error while trying to get track, check your internet connection."
+        except (
+            json.JSONDecodeError,
+            RequestException,
+            SpotifyException,
+            SpotifyOauthError,
+        ) as error:
+            failure_count += 1
+            delay = retry_delay(failure_count, poll_time)
+            logging.warning(
+                "Spotify poll failed (%s): %s; retrying in %.1fs",
+                type(error).__name__,
+                error,
+                delay,
             )
-            sleep(poll_time)
+            if (
+                not stale_warning_logged
+                and monotonic() - last_successful_poll >= STALE_WARNING_SECONDS
+            ):
+                logging.warning(
+                    "No successful Spotify response for at least %d minutes",
+                    STALE_WARNING_SECONDS // 60,
+                )
+                stale_warning_logged = True
+            sleep(delay)
             continue
-        except json.JSONDecodeError as e:
-            logging.error("Error trying to decode")
-            sleep(0.1)
+        except Exception:
+            failure_count += 1
+            delay = retry_delay(failure_count, poll_time)
+            logging.exception(
+                "Unexpected Spotify poll failure; retrying in %.1fs", delay
+            )
+            sleep(delay)
             continue
-        except Exception as e:
-            logging.error("Unknown Error")
-            logging.error(traceback.format_exc())
-            sleep(0.1)
-            continue
+
+        failure_count = 0
+        last_successful_poll = monotonic()
+        stale_warning_logged = False
 
         try:
             # Outputs a new line when a song ends, giving a short history directly in the log

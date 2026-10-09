@@ -24,6 +24,8 @@ jobs:
       run: |
         poetry run which aw-watcher-spotify
         poetry run python3 -c 'import aw_watcher_spotify'
+    - name: Run tests
+      run: poetry run python3 -m unittest discover -s tests -v
     - name: Typecheck with mypy
       run: |
         poetry run mypy --install-types --non-interactive --ignore-missing-imports aw_watcher_spotify
