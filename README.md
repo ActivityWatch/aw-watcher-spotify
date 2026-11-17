@@ -51,6 +51,40 @@ Run the script again and...
 You're done! Try playing a song on Spotify on any of your devices and it should start logging (provided they are not in offline mode).
 
 
+## Viewing listening history
+
+In ActivityWatch, open **Raw Data** and look for a populated
+`aw-watcher-spotify_<hostname>` bucket. Use the full bucket ID, including the
+hostname of the machine **running this watcher**, even if Spotify is playing on
+another device. Select a date or time range when the watcher recorded playback.
+
+### Top artists, tracks, or albums
+
+In web UIs with **Top Bucket Data** (verified in desktop **v0.14.0b8**; not
+available in **v0.13.2**):
+
+1. Open **Activity**, select the watcher host and a date with listening data.
+2. Choose **Edit view → Add visualization**.
+3. Open the new card's gear menu and select **Top Bucket Data**.
+4. Choose the full Spotify bucket ID under **Bucket**, then `artist`, `title`,
+   or `album` under **Field in event data**.
+5. Click **Save** to keep the card and its selections across reloads.
+
+The totals are **recorded listening duration**, not play counts. Grouping by
+`title` can combine different tracks with the same title.
+
+### Older web UIs
+
+On desktop **v0.13.2**, use **Timeline** to see recorded tracks chronologically,
+or choose **Open** next to the Spotify bucket under **Raw Data** to inspect its
+timeline and event fields. Set **Show from** and **to** to the relevant dates,
+then click **Apply**. These paths do not require upgrading to a beta release.
+
+**Custom Visualization** loads a separately served HTML page; it does not select
+a data bucket. This watcher does not provide such a page, so entering
+`aw-watcher-spotify` there cannot display its listening history.
+
+
 ## Note
 
 Even without using this watcher, you can get a full export of the last year of listening history by requesting an export directly from Spotify here: https://www.spotify.com/us/account/privacy/
